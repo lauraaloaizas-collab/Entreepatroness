@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entre patrones</title>
+<style>
+:root{--bg:#F2F5F2;--card:#fff;--ink:#14201A;--mut:#4B5B52;--line:#C5D0C8;--g:#0B7A4B;--gt:#0B7A4B;--y:#FFD84D;--ok:#0B7A4B;--bad:#B3361F;--sel:#E3F3EA;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1613;--card:#16231E;--ink:#E8EFEA;--mut:#A9B8AF;--line:#2D4036;--gt:#4FCB95;--ok:#4FCB95;--bad:#FF9A85;--sel:#1E3A2D;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0E1613;--card:#16231E;--ink:#E8EFEA;--mut:#A9B8AF;--line:#2D4036;--gt:#4FCB95;--ok:#4FCB95;--bad:#FF9A85;--sel:#1E3A2D;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:680px;margin:0 auto;padding:16px 16px 48px}
+h1,h2,h3,.serif{font-family:Georgia,"Times New Roman",serif;line-height:1.2}
+h1{font-size:2.2rem;margin:.2em 0}h2{font-size:1.5rem;margin:.3em 0}h3{font-size:1.1rem;margin:1em 0 .3em}
+p{margin:.5em 0}.mut{color:var(--mut)}.sm{font-size:.875rem}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px;margin:12px 0}
+.folder{position:relative;margin-top:30px;border-top:4px solid var(--y)}
+.folder .tab{position:absolute;top:-30px;left:-1px;background:var(--y);color:#14201A;font:600 .85rem Georgia,serif;padding:4px 12px;border-radius:6px 6px 0 0}
+button,.btn{font:inherit;min-height:44px;padding:8px 18px;border-radius:6px;border:2px solid var(--g);background:var(--g);color:#fff;cursor:pointer;font-weight:600}
+button.sec{background:transparent;color:var(--gt);border-color:var(--gt)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible+label,.route:focus-visible{outline:3px solid var(--y);outline-offset:2px;box-shadow:0 0 0 5px #14201A}
+.routes{display:grid;gap:12px}
+.route{display:block;width:100%;text-align:left;background:var(--card);color:var(--ink);border:1px solid var(--line);border-left:10px solid var(--c);padding:14px 16px;min-height:72px}
+.route b{font:600 1.15rem Georgia,serif;display:block}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.8rem;font-weight:700;background:var(--c);color:var(--t)}
+.cA{--c:#3478C0;--t:#fff}.cB{--c:#E88B35;--t:#1B1206}.cC{--c:#8659AD;--t:#fff}.cT{--c:var(--g);--t:#fff}
+ul{padding-left:1.2em;margin:.4em 0}li{margin:.3em 0}
+.warn{border-left:5px solid var(--y);background:var(--sel);padding:10px 14px;border-radius:4px;margin:12px 0}
+.pend{background:repeating-linear-gradient(45deg,transparent 0 8px,rgba(255,216,77,.28) 8px 16px);border:1px dashed var(--mut);padding:8px 10px;border-radius:4px;font-weight:600}
+.prog{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 14px}
+.prog i{display:block;height:100%;background:var(--y);border-right:2px solid var(--g)}
+.opt{margin:10px 0;position:relative}
+.opt input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.opt label{display:block;padding:12px 14px 12px 44px;border:2px solid var(--line);border-radius:6px;background:var(--card);position:relative;min-height:48px}
+.opt label::before{content:"";position:absolute;left:14px;top:14px;width:18px;height:18px;border-radius:50%;border:2px solid var(--mut)}
+.opt input:checked+label{border-color:var(--g);background:var(--sel)}
+.opt input:checked+label::before{background:var(--g);box-shadow:inset 0 0 0 3px var(--card)}
+.opt.right label{border-color:var(--ok);background:var(--sel)}.opt.wrong label{border-color:var(--bad)}
+.opt.lock input{cursor:default}
+.fb{border-left:5px solid var(--ok);padding-left:12px;margin:10px 0}.fb.x{border-color:var(--bad)}
+.big{font:700 3rem Georgia,serif;color:var(--gt)}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+// ===== CONSTANTES EDITABLES =====
+const AUTORAS = "Laura Sofía Hernández Gutiérrez y Laura Andrea Loaiza Saavedra";
+const P = "PENDIENTE DE VALIDACIÓN";
+
+// ===== BANCO (C1 completo del documento; el resto, marcadores pendientes) =====
+// op: [texto correcto, distractor 1, distractor 2]; pos: posición (0-2) de la correcta; dx: feedback de distractores
+const BANCO = [
+ {id:"A1",cl:"A",t:"Paranoide",eje:"Desconfianza persistente.",f:["Interpretación repetida de intenciones ajenas como amenazantes, con impacto interpersonal."],op:["Paranoide","Esquizotípico","Evitativo"],pos:1},
+ {id:"A2",cl:"A",t:"Esquizoide",eje:"Desapego interpersonal.",f:["Preferencia estable por actividades solitarias y escaso interés por vínculos cercanos."],op:["Esquizoide","Evitativo","Paranoide"],pos:0},
+ {id:"A3",cl:"A",t:"Esquizotípico",eje:"Peculiaridades cognitivas/perceptivas y relacionales.",f:["Ideas o experiencias perceptivas inusuales y dificultad sostenida para relacionarse."],op:["Esquizotípico","Paranoide","Esquizoide"],pos:2},
+ {id:"B1",cl:"B",t:"Antisocial",eje:"Desatención a derechos ajenos.",f:["Historial longitudinal de vulneración de derechos; considerar requisitos de edad y antecedentes."],op:["Antisocial","Narcisista","Límite"],pos:0},
+ {id:"B2",cl:"B",t:"Límite",eje:"Inestabilidad de identidad, afectos y vínculos.",f:["Inestabilidad afectiva, autoimagen y relaciones, con sensibilidad a abandono."],op:["Límite","Histriónico","Dependiente"],pos:2},
+ {id:"B3",cl:"B",t:"Histriónico",eje:"Búsqueda de atención.",f:["Expresividad emocional y búsqueda de atención en diversos contextos."],op:["Histriónico","Narcisista","Límite"],pos:1},
+ {id:"B4",cl:"B",t:"Narcisista",eje:"Grandiosidad, necesidad de admiración y dificultades empáticas.",f:["Patrón de grandiosidad y necesidad de admiración que afecta vínculos."],op:["Narcisista","Histriónico","Antisocial"],pos:2},
+ {id:"C1",cl:"C",t:"Evitativo",eje:"Inhibición y sensibilidad al rechazo.",
+  f:["Inhibición y sensibilidad al rechazo.","Deseo de conexión, pero retraimiento por temor intenso a crítica y rechazo.","Temor a la crítica y sentimientos de inferioridad."],
+  nom:"Claudia y las invitaciones",
+  v:"Claudia, de 27 años, desea crear amistades y participar en actividades de su oficina. Sin embargo, desde la adolescencia evita reuniones y no se postula a cargos nuevos porque anticipa que otras personas la juzgarán negativamente. Cuando recibe una invitación, revisa repetidamente qué podría decir y suele cancelar por miedo a hacer el ridículo. Considera que no resulta interesante y solo se aproxima a otros cuando está casi segura de ser aceptada. Este patrón aparece en distintos entornos y ha limitado oportunidades laborales y sociales. No hay datos suficientes para valorar otras explicaciones, como ansiedad social concurrente o experiencias recientes de rechazo.",
+  op:["Por evitación","Esquizoide","Dependiente"],pos:1,
+  ok:"La clave es que Claudia desea vincularse, pero evita la cercanía por temor a la crítica y sentimientos de inferioridad.",
+  dx:["Esto la diferencia de una preferencia genuina por el distanciamiento social (esquizoide).","Frente a la dependencia, predomina el temor al juicio negativo más que la necesidad persistente de que otros asuman decisiones y cuidados."],
+  miss:"Para evaluar clínicamente habría que explorar duración, inicio, intensidad, otras condiciones y contexto. El caso por sí solo no permite diagnóstico definitivo."},
+ {id:"C2",cl:"C",t:"Dependiente",eje:"Necesidad intensa de cuidado y temor a separación.",f:["Dificultad persistente para decisiones cotidianas sin reafirmación y temor a perder apoyo."],op:["Dependiente","Evitativo","Límite"],pos:0},
+ {id:"C3",cl:"C",t:"Obsesivo-compulsivo de la personalidad",eje:"Perfeccionismo, orden y control.",f:["Preocupación por control, perfeccionismo y rigidez, distinguida de obsesiones/compulsiones."],op:["Obsesivo-compulsivo de la personalidad","TOC","Evitativo"],pos:1}
+];
+const RUTAS = [
+ {k:"A",n:"Clúster A",d:"Desconfianza, desapego y rarezas cognitivas.",c:"cA",ids:["A1","A2","A3"]},
+ {k:"B",n:"Clúster B",d:"Impulsividad, afecto intenso y búsqueda de atención.",c:"cB",ids:["B1","B2","B3","B4"]},
+ {k:"C",n:"Clúster C",d:"Ansiedad, inhibición y control.",c:"cC",ids:["C1","C2","C3"]},
+ {k:"T",n:"Ruta completa",d:"Los diez expedientes en orden.",c:"cT",ids:BANCO.map(x=>x.id)}
+];
+const L = ["A","B","C"];
+const app = document.getElementById("app");
+let S = {screen:"portada",ruta:null,i:0,score:0,rev:[],verCaso:false,sel:null,conf:false,pend:0};
+
+// ===== utilidades =====
+const get = id => BANCO.find(x=>x.id===id);
+const pf = t => t || P;
+const pv = t => t ? t : `<span class="pend">${P}</span>`;
+function opciones(c){ // ordena opciones: correcta en c.pos
+  const d=[c.op[1],c.op[2]], r=[]; let j=0;
+  for(let k=0;k<3;k++) r.push(k===c.pos?{id:L[k],t:c.op[0],ok:true}:{id:L[k],t:d[j],fb:c.dx?c.dx[j++]:null,ok:false});
+  return r;
+}
+function validar(){ // integridad del banco
+  const ids=BANCO.map(x=>x.id); const dup=ids.length!==new Set(ids).size;
+  const n=RUTAS.map(r=>r.ids.length).join("/");
+  return !dup && n==="3/4/3/10" && BANCO.every(c=>c.op.length===3);
+}
+function pct(a,b){return (a/b*100).toFixed(1).replace(".",",")+" %"}
+function toggleTema(){
+  const r=document.documentElement, oscuro=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+  r.dataset.theme=oscuro?"light":"dark"; renderBar();
+}
+function barra(){return `<div class="bar"><span class="serif"><b>Entre patrones</b></span><button class="sec" id="tema" aria-label="Alternar modo claro u oscuro">Modo claro/oscuro</button></div>`}
+function ir(s){S.screen=s;render()}
+function render(){
+  const f={portada,menu,teoria,expediente,feedback,resultados}[S.screen]; app.innerHTML=barra()+f();
+  document.getElementById("tema").onclick=toggleTema;
+  const h=app.querySelector("h1,h2"); if(h){h.tabIndex=-1;h.focus({preventScroll:true})} scrollTo(0,0);
+  (({portada:bPortada,menu:bMenu,teoria:bTeoria,expediente:bExp,feedback:bFb,resultados:bRes})[S.screen])();
+}
+function renderBar(){} // el tema se aplica por CSS
+
+// ===== pantallas =====
+function portada(){return `
+<section class="card folder"><span class="tab">Archivo de casos</span>
+<h1>Entre patrones</h1>
+<p class="serif" style="font-size:1.2rem">Casos clínicos ficticios sobre los diez trastornos de la personalidad del DSM-5-TR.</p>
+<p><b>Propósito.</b> Practicar el razonamiento clínico comparando hipótesis, sin etiquetar personas.</p>
+<h3>Cómo se juega</h3>
+<ol><li>Elige una ruta: un clúster o la ruta completa.</li><li>Lee la ficha teórica y abre el expediente.</li><li>Elige la hipótesis mejor sustentada, confirma y revisa la retroalimentación.</li></ol>
+<p><b>Objetivo de aprendizaje.</b> Reconocer patrones de los diez trastornos y comparar hipótesis diferenciales, sin confundir el ejercicio con un diagnóstico.</p>
+<div class="warn"><b>Recurso educativo; no constituye una herramienta de diagnóstico.</b></div>
+<p class="sm mut">No se piden datos personales.</p>
+<p class="sm"><b>Autoras:</b> ${AUTORAS}.</p>
+<p class="sm mut"><b>Referencias.</b> American Psychiatric Association [APA]. (2022). <i>Diagnostic and statistical manual of mental disorders</i> (5th ed., text rev.). World Health Organization [WHO]. (2024). <i>Clinical descriptions and diagnostic requirements for ICD-11 mental, behavioural and neurodevelopmental disorders</i>. Tejada-Sánchez, I. (2026). <i>Claude para docentes: Guía para el diseño de artefactos</i>. HUB de Innovación Educativa con IA, Universidad de los Andes.</p>
+<div class="row"><button id="go">Comenzar</button></div></section>`}
+function bPortada(){go.onclick=()=>ir("menu")}
+
+function menu(){return `<h2>Elige una ruta</h2>${validar()?"":'<p class="warn">El banco no pasó la validación de estructura.</p>'}
+<div class="routes">${RUTAS.map(r=>`<button class="route ${r.c}" data-k="${r.k}"><b>${r.n}</b><span class="pill">${r.ids.length} ${r.ids.length===1?"caso":"casos"}</span> <span class="mut sm">${r.d}</span></button>`).join("")}</div>
+<p class="sm mut">Los casos son ficticios y con finalidad educativa. La identificación de rasgos no reemplaza una evaluación clínica.</p>`}
+function bMenu(){
+  document.querySelectorAll(".route").forEach(b=>b.onclick=()=>{
+    S={screen:"teoria",ruta:RUTAS.find(r=>r.k===b.dataset.k),i:0,score:0,rev:[],verCaso:false,sel:null,conf:false,pend:0};render();});
+}
+const cur=()=>get(S.ruta.ids[S.i]);
+function prog(){const n=S.ruta.ids.length;return `<p class="sm"><b>${S.ruta.n}</b> · Caso ${S.i+1} de ${n}</p><div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${S.i+(S.screen==="feedback"?1:0)}"><i style="width:${(S.i+(S.screen==="feedback"?1:0))/n*100}%"></i></div>`}
+
+function teoria(){const c=cur();const fs=[0,1,2].map(k=>c.f[k]);return `${prog()}
+<section class="card folder"><span class="tab">Ficha teórica</span>
+<span class="pill c${c.cl}">Clúster ${c.cl}</span>
+<h2>${c.t}</h2>
+<h3>Definición</h3><p>${c.eje} <span class="sm mut">(síntesis didáctica)</span></p>
+<h3>Características</h3><ul>${fs.map(x=>`<li>${pv(x)}</li>`).join("")}</ul>
+<div class="warn">No basta un rasgo aislado: el juicio clínico requiere historia, funcionamiento y contexto.</div>
+<div class="row"><button id="ver">Ver caso</button><button class="sec" id="men">Volver al menú</button></div></section>`}
+function bTeoria(){ver.onclick=()=>{S.sel=null;S.conf=false;ir("expediente")};men.onclick=()=>ir("menu")}
+
+function expediente(){const c=cur();const o=opciones(c);return `${prog()}
+<section class="card folder"><span class="tab">Expediente ${c.id}</span>
+<h2>${c.nom?"«"+c.nom+"»":"Expediente "+c.id}</h2>
+<p class="serif" style="font-size:1.05rem;line-height:1.65">${pv(c.v)}</p>
+<fieldset style="border:0;padding:0;margin:16px 0 0"><legend class="serif" style="font-size:1.15rem;font-weight:700">¿Cuál es la hipótesis que mejor explica el patrón descrito?</legend>
+${o.map(x=>`<div class="opt"><input type="radio" name="h" id="o${x.id}" value="${x.id}"><label for="o${x.id}"><b>${x.id})</b> ${x.t}</label></div>`).join("")}</fieldset>
+<p class="sm mut">Los casos son ficticios y con finalidad educativa. La identificación de rasgos no reemplaza una evaluación clínica.</p>
+<div class="row"><button id="conf" disabled>Confirmar</button></div></section>`}
+function bExp(){
+  document.querySelectorAll('input[name=h]').forEach(i=>i.onchange=()=>{S.sel=i.value;conf.disabled=false});
+  conf.onclick=()=>{
+    if(!S.sel||S.conf)return;S.conf=true;const c=cur();const ok=opciones(c).find(x=>x.id===S.sel).ok;
+    if(ok)S.score++;else S.rev.push(c.t);
+    if(!c.v)S.pend++;
+    ir("feedback");
+  };
+}
+
+function feedback(){const c=cur();const o=opciones(c);const sel=o.find(x=>x.id===S.sel);const cor=o.find(x=>x.ok);const ult=S.i===S.ruta.ids.length-1;
+return `${prog()}
+<section class="card folder"><span class="tab">Retroalimentación · ${c.id}</span>
+<h2>${sel.ok?"Hipótesis correcta":"Hipótesis no sustentada"}</h2>
+<p>Tu respuesta: <b>${sel.id}) ${sel.t}</b>. Respuesta esperada: <b>${cor.id}) ${cor.t}</b>.</p>
+${o.map(x=>`<div class="opt ${x.ok?"right":(x.id===S.sel?"wrong":"")} lock"><label style="padding-left:14px"><b>${x.id}) ${x.t}</b> ${x.ok?"✔ Esperada":""}${x.id===S.sel?" (tu elección)":""}</label></div>`).join("")}
+<div class="fb ${sel.ok?"":"x"}"><h3>Por qué sí (${cor.t})</h3><p>${pv(c.ok)}</p></div>
+${o.filter(x=>!x.ok).map(x=>`<div class="fb x"><h3>Por qué no ${x.id}) ${x.t}</h3><p>${pv(x.fb)}</p></div>`).join("")}
+<h3>Dato faltante y límite del caso</h3><p>${pv(c.miss)}</p>
+<div class="row"><button id="sig">${ult?"Ver resultados":"Siguiente expediente"}</button></div></section>`}
+function bFb(){sig.onclick=()=>{if(S.i===S.ruta.ids.length-1)ir("resultados");else{S.i++;S.sel=null;S.conf=false;ir("teoria")}}}
+
+function resultados(){const n=S.ruta.ids.length;return `<h2>Resultados · ${S.ruta.n}</h2>
+<section class="card folder"><span class="tab">Cierre de ruta</span>
+<p class="big">${S.score}/${n}</p><p><b>${pct(S.score,n)}</b> de aciertos.</p>
+<h3>Conceptos para repasar</h3>${S.rev.length?`<ul>${S.rev.map(x=>`<li>${x}</li>`).join("")}</ul>`:"<p>Ninguno: todos los casos se acertaron al primer intento.</p>"}
+${S.pend?`<div class="warn">${S.pend} de ${n} expedientes tienen contenido marcado como «${P}». Complétalos con el banco validado antes de usar el resultado.</div>`:""}
+<div class="warn">Los casos son ficticios; el resultado no es un diagnóstico ni una evaluación clínica.</div>
+<div class="row"><button id="rep">Repetir ruta</button><button class="sec" id="vm">Volver al menú</button></div></section>`}
+function bRes(){
+  rep.onclick=()=>{S={screen:"teoria",ruta:S.ruta,i:0,score:0,rev:[],verCaso:false,sel:null,conf:false,pend:0};render()};
+  vm.onclick=()=>ir("menu");
+}
+render();
+</script>
+</body>
+</html>
